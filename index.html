@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image-to-Image Studio Pro</title>
+    <!-- Tailwind CSS for modern premium responsive design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for high quality iconography -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font for elegant sans-serif typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styling for sliders to match premium tech aesthetic */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #10b981;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            transition: transform 0.1s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        /* Hide scrollbars for slick galleries but preserve scrolling */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes scan {
+            0% { top: 10%; }
+            50% { top: 90%; }
+            100% { top: 10%; }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-emerald-500/30 selection:text-emerald-400">
+
+    <div class="container mx-auto px-4 py-6 max-w-7xl flex-1 flex flex-col justify-center">
+        <!-- Floating Toast Notifications Container -->
+        <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+        <!-- Header -->
+        <header class="mb-6 border-b border-slate-800 pb-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-blue-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                        <i class="fa-solid fa-wand-magic-sparkles text-lg text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-extrabold bg-gradient-to-r from-emerald-400 via-teal-300 to-blue-500 bg-clip-text text-transparent">
+                            Gemini Image Studio <span class="text-sm font-medium text-slate-500">v3.2 ✨ AI Enhanced</span>
+                        </h1>
+                        <p class="text-xs text-slate-400">Generasi Gambar Kreatif Berbasis Prompt &amp; Referensi Gambar Asli dengan Dukungan Gemini LLM</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick System Stats & Settings -->
+            <div class="flex items-center gap-3 self-stretch md:self-auto justify-between border-t border-slate-800/60 pt-3 md:pt-0 md:border-0">
+                <div id="mode-badge" class="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg text-xs">
+                    <span class="h-2 w-2 rounded-full bg-blue-500 animate-pulse" id="mode-indicator-dot"></span>
+                    <span class="text-slate-450 font-mono" id="mode-indicator-text">Mode: Text-to-Image</span>
+                </div>
+                <!-- Audio Synth Toggle -->
+                <button id="sound-toggle" class="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30 transition-all" title="Toggle Sound Synth SFX">
+                    <i class="fa-solid fa-volume-high" id="sound-icon"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            
+            <!-- Left Panel: Controls & Image Import (Lg: col-span-5) -->
+            <div class="lg:col-span-5 space-y-6 flex flex-col justify-between">
+                
+                <!-- Section 1: Source Upload / Reference Image -->
+                <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-xl relative">
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="block text-sm font-semibold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-file-image text-emerald-400"></i> 1. Gambar Referensi (Opsional)
+                        </label>
+                        <!-- ✨ LLM Image Analyzer Button -->
+                        <button id="analyze-images-btn" class="hidden text-[11px] bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-650 hover:to-emerald-700 text-slate-950 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 shadow-md shadow-emerald-500/10" title="Bedah Gambar Referensi memakai Gemini LLM">
+                            <i class="fa-solid fa-brain"></i> ✨ Bedah Gambar
+                        </button>
+                    </div>
+                    
+                    <!-- Preloaded Sample Images Quick Bar -->
+                    <div id="samples-bar" class="mb-3 flex items-center gap-2 bg-slate-950/60 p-2 rounded-xl border border-slate-800/40">
+                        <span class="text-[10px] text-slate-500 font-mono uppercase tracking-wider block mr-1">Sampel:</span>
+                        <button onclick="loadSampleImage('https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80', 'Neon Cosmic')" class="h-8 w-12 rounded-md overflow-hidden border border-slate-800 hover:border-emerald-500 transition-all opacity-80 hover:opacity-100 bg-slate-900">
+                            <img src="https://images.unsplash.com/photo-1534447677768-be436bb09401?w=100&auto=format&fit=crop&q=60" class="w-full h-full object-cover" alt="Space Sample">
+                        </button>
+                        <button onclick="loadSampleImage('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80', 'Sunny Coast')" class="h-8 w-12 rounded-md overflow-hidden border border-slate-800 hover:border-emerald-500 transition-all opacity-80 hover:opacity-100 bg-slate-900">
+                            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=100&auto=format&fit=crop&q=60" class="w-full h-full object-cover" alt="Beach Sample">
+                        </button>
+                        <button onclick="loadSampleImage('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&auto=format&fit=crop&q=80', 'Green Forest')" class="h-8 w-12 rounded-md overflow-hidden border border-slate-800 hover:border-emerald-500 transition-all opacity-80 hover:opacity-100 bg-slate-900">
+                            <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=100&auto=format&fit=crop&q=60" class="w-full h-full object-cover" alt="Forest Sample">
+                        </button>
+                    </div>
+
+                    <!-- Interactive Drag-and-Drop Dropzone -->
+                    <div id="drop-zone" class="border-2 border-dashed border-slate-800 hover:border-emerald-500/50 rounded-xl p-5 text-center cursor-pointer transition-all bg-slate-950/40 group relative overflow-hidden flex flex-col justify-center items-center min-h-[220px]">
+                        <input type="file" id="file-input" class="hidden" accept="image/*" multiple>
+                        
+                        <!-- State A: Upload Prompt -->
+                        <div id="upload-prompt" class="space-y-3 py-6">
+                            <div class="h-12 w-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-slate-400 group-hover:text-emerald-400 group-hover:border-emerald-500/30 transition-all">
+                                <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-slate-300">Klik / Seret Gambar ke Sini</p>
+                                <p class="text-[11px] text-slate-500 mt-1">Gunakan s.d 5 gambar referensi untuk mode Image-to-Image</p>
+                            </div>
+                        </div>
+                        
+                        <!-- State B: Grid Container for Multiple Images -->
+                        <div id="preview-container" class="hidden w-full h-full flex flex-col gap-3">
+                            <div id="slots-grid" class="grid grid-cols-5 gap-2 w-full">
+                                <!-- Dynamically generated slots 1-5 -->
+                            </div>
+                            <!-- Float Controls (Clear, Reset, Delete) -->
+                            <div class="flex justify-between items-center bg-slate-900/90 backdrop-blur-md px-3 py-2 rounded-lg border border-slate-800/80 text-xs gap-2 shadow-lg z-20">
+                                <span class="text-[10px] text-slate-400 font-mono truncate" id="file-info-label">0/5 Gambar Referensi Aktif</span>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    <button id="remove-btn" type="button" class="bg-rose-650/90 hover:bg-rose-600 text-white p-1 rounded-full text-[10px] shadow-md transition-all h-6 w-6 flex items-center justify-center" title="Hapus semua gambar">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Face Lock Toggle Switch -->
+                    <div id="face-lock-control" class="hidden mt-3 flex items-center justify-between bg-slate-950/80 border border-slate-800/80 p-2.5 rounded-xl">
+                        <div class="flex items-center gap-2">
+                            <span class="relative flex h-2 w-2">
+                                <span id="face-lock-ping" class="absolute inline-flex h-full w-full rounded-full bg-slate-500 opacity-75"></span>
+                                <span id="face-lock-dot" class="relative inline-flex rounded-full h-2 w-2 bg-slate-500"></span>
+                            </span>
+                            <span class="text-xs font-semibold text-slate-350 flex items-center gap-1.5">
+                                <i class="fa-solid fa-user-shield text-slate-450" id="face-lock-icon"></i> Lock Identitas Wajah
+                            </span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="lock-face-toggle" class="sr-only peer">
+                            <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 peer-checked:after:bg-slate-950"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Section 2: Prompts & Presets -->
+                <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <label class="block text-sm font-semibold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-feather-pointed text-purple-400"></i> 2. Panduan Gaya &amp; Prompt
+                        </label>
+                        <span class="text-[10px] text-slate-500 font-mono tracking-wider">PRESET GAYA</span>
+                    </div>
+
+                    <!-- Prompt Presets Slider Grid -->
+                    <div class="grid grid-cols-3 gap-1.5 text-xs">
+                        <button onclick="applyPreset('Cyberpunk Neon', 'A hyper-detailed 3D rendering cyberpunk city streets at night, glowing neon signs in magenta, violet, and electric cyan, reflection on wet asphalt floor, futuristic aesthetic, ultra cinematic.')" class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 hover:border-purple-500/50 hover:bg-slate-900 text-left transition-all">
+                            <span class="block text-[10px] text-purple-400 font-semibold mb-0.5">🚀 Futuristic</span>
+                            Cyberpunk
+                        </button>
+                        <button onclick="applyPreset('Pencil Sketch', 'A detailed classical pencil sketch illustration on textured light beige paper, elegant charcoal strokes, vintage shading, artistic hand-drawn sketch.')" class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 hover:border-blue-400/50 hover:bg-slate-900 text-left transition-all">
+                            <span class="block text-[10px] text-blue-400 font-semibold mb-0.5">✏️ Drawing</span>
+                            Sketch
+                        </button>
+                        <button onclick="applyPreset('Pixel Art', 'A retro 8-bit classic pixel art illustration, vibrant arcade game color palette, detailed vintage game visual design.')" class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 hover:border-emerald-400/50 hover:bg-slate-900 text-left transition-all">
+                            <span class="block text-[10px] text-emerald-400 font-semibold mb-0.5">👾 Arcade</span>
+                            8-Bit Pixel
+                        </button>
+                        <button onclick="applyPreset('Van Gogh', 'An impressionist oil painting style in the signature of Vincent van Gogh, thick textured brush strokes, beautiful swirling patterns of starry night, yellow suns, and blue cypress trees.')" class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 hover:border-amber-400/50 hover:bg-slate-900 text-left transition-all">
+                            <span class="block text-[10px] text-amber-400 font-semibold mb-0.5">🎨 Impresionisme</span>
+                            Oil Painting
+                        </button>
+                        <button onclick="applyPreset('Comic Book', 'Classic vintage American comic book illustration style, bold ink outlines, dynamic action colors, retro halftone dot shading patterns, pop-art style.')" class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 hover:border-cyan-400/50 hover:bg-slate-900 text-left transition-all">
+                            <span class="block text-[10px] text-cyan-400 font-semibold mb-0.5">📚 Pop Art</span>
+                            Comic Retro
+                        </button>
+                        <button onclick="applyPreset('Vaporwave', 'Dreamy 1980s vaporwave aesthetic illustration, classic Greek marble sculpture with colorful color distortion, glitch art style, pastel purple, magenta and turquoise sunset background.')" class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 hover:border-rose-400/50 hover:bg-slate-900 text-left transition-all">
+                            <span class="block text-[10px] text-rose-400 font-semibold mb-0.5">🌊 Aesthetic</span>
+                            Vaporwave
+                        </button>
+                    </div>
+
+                    <div class="relative">
+                        <textarea id="prompt-input" rows="3" 
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 resize-none transition-all"
+                            placeholder="Ketik instruksi modifikasi secara mendetail (Contoh: A majestic dragon flying over mountains, high quality, vibrant colors)..."></textarea>
+                        
+                        <!-- Quick Actions including Sparkle LLM Button -->
+                        <div class="absolute bottom-2.5 right-2.5 flex items-center gap-1.5">
+                            <button id="enhance-prompt-btn" class="text-[10px] bg-gradient-to-r from-violet-600 to-indigo-600 hover:brightness-110 text-white px-2.5 py-1 rounded-md font-bold transition-all shadow-md shadow-indigo-950" title="Kembangkan prompt Anda menjadi detail artistik menggunakan Gemini LLM">
+                                <span id="enhance-text">✨ Optimalkan Prompt</span>
+                            </button>
+                            <button id="clear-prompt-btn" class="text-[10px] bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white px-1.5 py-1 rounded transition-all">Clear</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Fine Tuning Parameters & Aspect Ratio -->
+                <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-xl space-y-4">
+                    <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-teal-400"></i> 3. Parameter Tambahan
+                    </h3>
+                    
+                    <!-- Aspect Ratio Selector -->
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Aspek Rasio Gambar (Aspect Ratio)</label>
+                        <select id="aspect-ratio-selector" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
+                            <option value="1:1" selected>1:1 (Square - Ideal untuk Avatar/Post)</option>
+                            <option value="16:9">16:9 (Landscape - Layar Lebar)</option>
+                            <option value="9:16">9:16 (Portrait - Ponsel/Stories)</option>
+                            <option value="2:3">2:3 (Portrait - Standar Foto / DSLR)</option>
+                            <option value="4:5">4:5 (Portrait - Feed Instagram / Sosmed)</option>
+                            <option value="3:4">3:4 (Portrait - Klasik Portrait)</option>
+                            <option value="4:3">4:3 (Standard - Klasik Foto)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Generate Call to Action Button -->
+                <button id="generate-btn" disabled
+                    class="w-full py-4 px-5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 disabled:from-slate-800 disabled:to-slate-850 hover:brightness-110 active:scale-[0.99] text-slate-950 font-bold rounded-xl shadow-lg shadow-emerald-950/20 transition-all flex items-center justify-center gap-2.5 disabled:cursor-not-allowed disabled:opacity-50 text-sm">
+                    <i id="btn-icon" class="fa-solid fa-bolt text-slate-950"></i>
+                    <span id="btn-text">Synthesize Image</span>
+                </button>
+
+            </div>
+
+            <!-- Right Panel: Creative Canvas Preview & Before-After Slider (Lg: col-span-7) -->
+            <div class="lg:col-span-7 flex flex-col justify-between h-full space-y-6">
+                
+                <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-xl flex-1 flex
